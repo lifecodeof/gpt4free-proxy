@@ -43,8 +43,7 @@ def prompt(model: str, stream: bool, messages):
         or "AI.LS: FREE LIMIT EXCEEDED" in response
     ):
         providerIndex += 1
-        if providerIndex > len(providers):
-            raise Exception("No more providers")
+        providerIndex %= len(providers)
         print("NEXT_PROVIDER", providerIndex, get_provider())
         return prompt(model, stream, messages)
     else:
