@@ -6,13 +6,12 @@ from typing import Any
 
 from flask import Flask, request
 from flask_cors import CORS
-from g4f import ChatCompletion, Provider
+from g4f import ChatCompletion, Provider, models as ms
+from g4f.models import ModelUtils
 from rich import print
 from rich.json import JSON
 from rich.panel import Panel
 from rich.pretty import Pretty
-
-MODELS = ["gpt-3.5-turbo"]
 
 
 app = Flask(__name__)
@@ -20,12 +19,17 @@ CORS(app)
 
 providerIndex = 0
 providers = Provider.__all__[1:]
+models = list(ModelUtils.convert.keys())
+
+
+def get_provider():
+    return getattr(Provider, (providers[providerIndex]))
 
 
 def prompt(model: str, stream: bool, messages):
     global providerIndex
     response = None
-    provider = getattr(Provider, (providers[providerIndex]))
+    provider = get_provider()
     try:
         response = ChatCompletion.create(
             model=model, stream=stream, messages=messages, provider=provider
@@ -33,11 +37,15 @@ def prompt(model: str, stream: bool, messages):
     except Exception as e:
         print(f"Error ({provider=}): {e}")
 
-    if not response or ("g4f.Provider.Providers" in response and "is not working" in response):
+    if (
+        not response
+        or ("g4f.Provider.Providers" in response and "is not working" in response)
+        or "AI.LS: FREE LIMIT EXCEEDED" in response
+    ):
         providerIndex += 1
         if providerIndex > len(providers):
             raise Exception("No more providers")
-        print("NEXT_PROVIDER", providerIndex)
+        print("NEXT_PROVIDER", providerIndex, get_provider())
         return prompt(model, stream, messages)
     else:
         return response
@@ -132,7 +140,7 @@ def chat_completions():
 
 
 @app.get("/models")
-def models():
+def get_models():
     def model(id: str):
         return {
             "id": id,
@@ -144,7 +152,7 @@ def models():
     return app.json.response(
         {
             "object": "list",
-            "data": [model(id) for id in MODELS],
+            "data": [model(id) for id in models],
             "object": "list",
         }
     )
