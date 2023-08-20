@@ -6,7 +6,7 @@ from typing import Any
 
 from flask import Flask, request
 from flask_cors import CORS
-from g4f import ChatCompletion, Provider, models as ms
+from g4f import ChatCompletion, Provider
 from g4f.models import ModelUtils
 from rich import print
 from rich.json import JSON
@@ -20,6 +20,10 @@ CORS(app)
 providerIndex = 0
 providers = Provider.__all__[1:]
 models = list(ModelUtils.convert.keys())
+
+
+def panel(renderable, title: str):
+    print(Panel(renderable, title=title))
 
 
 def get_provider():
@@ -61,10 +65,11 @@ def rich_repr(obj):
 
 @app.route("/chat/completions", methods=["POST"])
 def chat_completions():
-    model = request.get_json().get("model", "gpt-3.5-turbo")
-    stream = request.get_json().get("stream", False)
-    messages = request.get_json().get("messages")
-    print(Panel(Pretty(messages), title="messages"))
+    body = request.get_json()
+    model = body.get("model", "gpt-3.5-turbo")
+    stream = body.get("stream", False)
+    messages = body.get("messages")
+    panel(Pretty(messages), "messages")
 
     response = prompt(model, stream, messages)
 
@@ -93,7 +98,7 @@ def chat_completions():
                 "total_tokens": 1,
             },
         }
-        print(Panel(rich_repr(response), title="response"))
+        panel(rich_repr(response), "response")
 
         return res
 
@@ -155,6 +160,28 @@ def get_models():
             "object": "list",
         }
     )
+
+
+@app.post("/embeddings")
+def create_embeddings():
+    body = request.get_json()
+    input = body.get("input")
+    model = body.get("model")
+
+    panel(rich_repr(body), "embedding params")
+
+    return {
+        "object": "list",
+        "data": [
+            {
+                "object": "embedding",
+                "embedding": [], # TODO: array may contain numbers idk
+                "index": 0,
+            }
+        ],
+        "model": model,
+        "usage": {"prompt_tokens": 1, "total_tokens": 1},
+    }
 
 
 if __name__ == "__main__":
