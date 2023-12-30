@@ -16,6 +16,7 @@ pip install -r requirements.txt
 
 # Run the application
 python3.10 main.py
+```
 
 ## Usage
 Set your OpenAI client's base URL to "localhost:1337" and you're done.
