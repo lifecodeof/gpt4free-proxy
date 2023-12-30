@@ -19,4 +19,4 @@ python3.10 main.py
 ```
 
 ## Usage
-Set your OpenAI client's base URL to "localhost:1337" and you're done.
+Set your OpenAI client's base URL to "http://localhost:1337" and you're done.
